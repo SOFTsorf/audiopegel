@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Visualizer Pro - Extreme 4.0</title>
+    <title>Visualizer Pro - Extreme 4.1</title>
     <style>
         :root { --accent: #00f2ff; --bg: #000; --glass: rgba(255, 255, 255, 0.07); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
@@ -62,7 +62,7 @@
 <body>
 
     <div id="start-screen">
-        <h1 style="letter-spacing: 10px; font-weight: 100; margin-bottom: 30px;">ULTRA VISUALIZER 4.0</h1>
+        <h1 style="letter-spacing: 10px; font-weight: 100; margin-bottom: 30px;">ULTRA VISUALIZER 4.1</h1>
         <button class="btn-main" onclick="initApp()">S T A R T</button>
         <p style="margin-top: 20px; opacity: 0.4; font-size: 10px;">DOPPELTIPP FÜR VOLLBILD</p>
     </div>
@@ -115,7 +115,6 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // UI Erstellung
         const btnContainer = document.getElementById('mode-buttons');
         visuals.forEach((v, i) => {
             const btn = document.createElement('button');
@@ -127,8 +126,20 @@
 
         async function initApp() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                // FIX: Constraints gegen "Call-Modus"
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: false,
+                        noiseSuppression: false,
+                        autoGainControl: false
+                    } 
+                });
+                
+                // FIX: Latency hint auf playback
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)({
+                    latencyHint: 'playback'
+                });
+                
                 analyser = audioCtx.createAnalyser();
                 analyser.fftSize = 512;
                 source = audioCtx.createMediaStreamSource(stream);
@@ -164,7 +175,6 @@
         }
 
         // --- EFFEKTE (REALE LOGIK) ---
-
         function drawNebula(w, h, cx, cy) {
             const bass = smoothArray[2]/255;
             const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, bass * h);
@@ -172,7 +182,6 @@
             g.addColorStop(1, 'transparent');
             ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
         }
-
         function drawHyperdrive(w, h, cx, cy) {
             for(let i=0; i<60; i++) {
                 const a = i * 137.5; const d = (frame * 8 + i * 30) % w;
@@ -180,7 +189,6 @@
                 ctx.beginPath(); ctx.arc(cx+Math.cos(a)*d, cy+Math.sin(a)*d, 2 + smoothArray[i%20]/20, 0, 7); ctx.fill();
             }
         }
-
         function drawEq(w, h, cx, cy) {
             const bW = w/60;
             for(let i=0; i<60; i++) {
@@ -190,7 +198,6 @@
                 ctx.fillRect(i*bW, h-v, bW-2, v);
             }
         }
-
         function drawTunnel(w, h, cx, cy) {
             for(let i=0; i<15; i++) {
                 const s = (frame*2 + i*100) % 1000;
@@ -200,7 +207,6 @@
                 ctx.strokeRect(cx-s/2, cy-s/2, s, s);
             }
         }
-
         function drawNeural(w, h, cx, cy) {
             const pts = [];
             for(let i=0; i<15; i++) {
@@ -218,7 +224,6 @@
                 });
             });
         }
-
         function drawHole(w, h, cx, cy) {
             ctx.translate(cx, cy); ctx.rotate(-frame*0.01);
             for(let i=0; i<80; i++) {
@@ -227,7 +232,6 @@
                 ctx.beginPath(); ctx.arc(Math.cos(a)*r, Math.sin(a)*r, smoothArray[i%30]/15, 0, 7); ctx.fill();
             }
         }
-
         function drawScope(w,h,cx,cy) {
             analyser.getByteTimeDomainData(dataArray);
             ctx.beginPath(); ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 1)`; ctx.lineWidth=4;
@@ -237,7 +241,6 @@
             }
             ctx.stroke();
         }
-
         function drawRain(w,h,cx,cy) {
             for(let i=0; i<30; i++) {
                 const x = (w/30)*i; const l = (smoothArray[i*3]/255)*h;
@@ -246,7 +249,6 @@
                 ctx.fillStyle = "#fff"; ctx.fillRect(x, l-10, 2, 10);
             }
         }
-
         function drawVortex(w, h, cx, cy) {
             ctx.translate(cx, cy);
             for(let i=0; i<120; i++) {
@@ -256,7 +258,6 @@
                 ctx.fillRect(r, r, 5, 5);
             }
         }
-
         function drawHex(w, h, cx, cy) {
             ctx.translate(cx, cy); ctx.rotate(frame*0.01);
             ctx.lineWidth=5; ctx.strokeStyle=`hsla(${hue},100%,50%,1)`;
@@ -269,7 +270,6 @@
             }
             ctx.stroke();
         }
-
         function drawWeb(w,h,cx,cy) {
             ctx.translate(cx,cy);
             for(let i=0; i<12; i++) {
@@ -279,8 +279,6 @@
                 ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(l, l); ctx.stroke();
             }
         }
-
-        // --- BACKUP / WEITERE MODI ---
         function drawFire(w,h,cx,cy) { drawEq(w,h*2,cx,cy); }
         function drawKaleid(w,h,cx,cy) { ctx.translate(cx,cy); for(let i=0; i<6; i++){ ctx.rotate(Math.PI/3); drawEq(w/4,h/4,0,0); } }
         function drawGrid(w,h,cx,cy) { ctx.strokeStyle=`hsla(${hue},100%,50%,0.2)`; for(let i=0; i<w; i+=50){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,h);ctx.stroke();} }
@@ -293,32 +291,22 @@
         function drawStorm(w,h,cx,cy) { drawNebula(w,h,cx,cy); }
         function drawDNA(w,h,cx,cy) { drawNeural(w,h,cx,cy); }
 
-        // --- UI & FULLSCREEN LOGIK ---
+        // --- UI & FULLSCREEN ---
         function setMode(m) { mode = m; isFilmMode = false; updateUI(); triggerUI(); }
         function toggleFilmMode() { isFilmMode = !isFilmMode; updateUI(); }
-        
         function toggleFS() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(e => {
-                    alert("Vollbild nicht möglich. Bitte Browser-Einstellungen prüfen.");
-                });
-            } else {
-                document.exitFullscreen();
-            }
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+            else document.exitFullscreen();
         }
-
         function updateUI() {
             visuals.forEach((_, i) => document.getElementById(`btn-${i}`).classList.toggle('active', mode === i));
             document.getElementById('auto-btn').classList.toggle('active', isFilmMode);
         }
-
         function triggerUI() {
             document.body.classList.add('ui-active');
             clearTimeout(uiTimeout);
             uiTimeout = setTimeout(() => document.body.classList.remove('ui-active'), 3000);
         }
-
-        // Double-Tap Erkennung
         let lastTap = 0;
         window.addEventListener('touchstart', (e) => {
             const now = Date.now();
@@ -326,11 +314,9 @@
             lastTap = now;
             triggerUI();
         });
-
         window.addEventListener('mousemove', triggerUI);
         window.addEventListener('click', triggerUI);
         window.addEventListener('keydown', (e) => { if(e.key === 'f') toggleFS(); });
-
     </script>
 </body>
 </html>
