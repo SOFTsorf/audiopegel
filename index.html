@@ -3,49 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Visualizer Pro - Always On</title>
+    <title>Ultimate Visualizer v5 - Fullscreen Fixed</title>
     <style>
         :root { --accent: #00f2ff; --bg: #000; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            background: var(--bg); overflow: hidden; font-family: sans-serif;
+            background: var(--bg); overflow: hidden; font-family: 'Segoe UI', sans-serif;
             touch-action: none; 
         }
-        canvas { position: absolute; top: 0; left: 0; display: block; width: 100%; height: 100%; }
+        canvas { position: absolute; top: 0; left: 0; display: block; width: 100%; height: 100%; cursor: none; }
 
+        /* UI Layer */
         .ui-layer {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
             display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; 
-            z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 12px; 
+            z-index: 100; background: rgba(0, 0, 0, 0.85); padding: 12px; 
             border-radius: 20px; backdrop-filter: blur(20px);
-            width: 95%; max-width: 650px;
-            transition: all 0.4s ease; border: 1px solid rgba(255,255,255,0.1);
+            width: 95%; max-width: 700px;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
+            border: 1px solid rgba(255,255,255,0.1);
+            opacity: 1;
         }
 
-        body.is-fullscreen .ui-layer { opacity: 0; pointer-events: none; transform: translate(-50%, 60px); }
+        /* VOLLBILD LOGIK: UI komplett weg, wenn aktiv */
+        body.is-fullscreen .ui-layer { opacity: 0; pointer-events: none; transform: translate(-50%, 100px); }
+        
+        /* UI kurz zeigen bei Interaktion im Vollbild */
         body.is-fullscreen.show-ui .ui-layer { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
 
         button {
             background: rgba(255,255,255,0.1); border: none; color: #fff;
             padding: 10px; border-radius: 10px; cursor: pointer; 
-            font-size: 10px; flex: 1 1 60px; text-transform: uppercase;
+            font-size: 10px; flex: 1 1 65px; text-transform: uppercase;
+            transition: 0.2s;
         }
-        button.active { background: var(--accent); color: #000; font-weight: bold; }
+        button.active { background: var(--accent); color: #000; font-weight: bold; box-shadow: 0 0 15px var(--accent); }
+        button.fs-toggle { background: rgba(0, 242, 255, 0.2); border: 1px solid var(--accent); flex: 1 1 100px; }
 
         #start-screen {
-            position: fixed; inset: 0; background: #000; z-index: 100;
+            position: fixed; inset: 0; background: #000; z-index: 200;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             color: white; cursor: pointer; text-align: center;
+        }
+
+        .hint { 
+            position: fixed; top: 15px; width: 100%; text-align: center; 
+            color: rgba(255,255,255,0.3); font-size: 10px; z-index: 5;
+            pointer-events: none; text-transform: uppercase; letter-spacing: 2px;
         }
     </style>
 </head>
 <body>
 
     <div id="start-screen" onclick="initApp()">
-        <h1 style="letter-spacing: 10px; font-weight: 200;">ULTRA VIZ</h1>
-        <p style="color: var(--accent);">TOUCH TO START & KEEP SCREEN ON</p>
+        <h1 style="letter-spacing: 12px; font-weight: 200; margin-bottom: 15px;">V I S U A L I Z E R</h1>
+        <p style="color: var(--accent); font-size: 14px;">KLICKEN ZUM STARTEN</p>
+        <p style="font-size: 10px; opacity: 0.5; margin-top: 20px;">Bildschirm bleibt an • Telefon-Modus blockiert</p>
     </div>
+
+    <div class="hint">TAP: WECHSELN | 'F': VOLLBILD</div>
 
     <canvas id="canvas"></canvas>
 
@@ -60,6 +77,9 @@
         <button onclick="setMode(7, event)">Matrix</button>
         <button onclick="setMode(8, event)">DNA</button>
         <button onclick="setMode(9, event)">Tunnel</button>
+        <button onclick="setMode(10, event)">Orbit</button>
+        <button onclick="setMode(11, event)">Peak</button>
+        <button onclick="toggleFS(event)" class="fs-toggle">VOLLBILD AN/AUS</button>
     </div>
 
     <script>
@@ -79,29 +99,18 @@
         window.addEventListener('resize', resize);
         resize();
 
-        // Screen Wake Lock: Hält den Bildschirm an
-        async function requestWakeLock() {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                }
-            } catch (err) { console.log("WakeLock failed"); }
-        }
-
         async function initApp() {
             if (audioCtx) return;
-            
-            // Wake Lock aktivieren
-            await requestWakeLock();
+
+            // Screen Wake Lock
+            if ('wakeLock' in navigator) {
+                try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+            }
 
             try {
-                // FIX: Telefon-Modus verhindern durch echoCancellation: false
+                // Telefon-Modus verhindern (echoCancellation: false)
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: {
-                        echoCancellation: false,
-                        noiseSuppression: false,
-                        autoGainControl: false
-                    } 
+                    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } 
                 });
 
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -111,17 +120,18 @@
                 analyser.smoothingTimeConstant = 0.85;
                 dataArray = new Uint8Array(analyser.frequencyBinCount);
                 
-                // WICHTIG: Nicht zurück an die Speaker leiten (kein Feedback/Telefon-Modus)
                 source.connect(analyser);
 
                 document.getElementById('start-screen').style.display = 'none';
+                updateUI();
                 draw();
-            } catch (err) { alert("Mikrofon-Zugriff verweigert."); }
+            } catch (err) { alert("Mikrofon-Zugriff erforderlich."); }
         }
 
+        // Modus-Wechsel per Pointer (verhindert Mehrfach-Trigger auf Mobile)
         window.addEventListener('pointerdown', (e) => {
             if(e.target.tagName !== 'BUTTON' && audioCtx) {
-                mode = (mode + 1) % 10;
+                mode = (mode + 1) % 12;
                 updateUI();
             }
             showUI();
@@ -135,14 +145,36 @@
 
         function updateUI() {
             const btns = document.querySelectorAll('button');
-            btns.forEach((b, i) => b.classList.toggle('active', i === mode));
+            btns.forEach((b, i) => { if(i < 12) b.classList.toggle('active', i === mode); });
         }
 
+        // ECHTER VOLLBILD MODUS
+        function toggleFS(e) {
+            if(e) e.stopPropagation();
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => {});
+                document.body.classList.add('is-fullscreen');
+            } else {
+                document.exitFullscreen();
+                document.body.classList.remove('is-fullscreen');
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) document.body.classList.remove('is-fullscreen');
+            else document.body.classList.add('is-fullscreen');
+        });
+
+        window.addEventListener('keydown', e => { if(e.key.toLowerCase() === 'f') toggleFS(); });
+
+        // UI Einblenden bei Bewegung
         function showUI() {
             document.body.classList.add('show-ui');
             clearTimeout(uiTimeout);
             uiTimeout = setTimeout(() => document.body.classList.remove('show-ui'), 3000);
         }
+        window.addEventListener('mousemove', showUI);
+        window.addEventListener('touchstart', showUI);
 
         function draw() {
             requestAnimationFrame(draw);
@@ -150,88 +182,88 @@
             const w = window.innerWidth, h = window.innerHeight;
             const cx = w/2, cy = h/2;
 
+            // Hintergrund mit Fade für "Smoothness" ohne Rückstände
             ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.fillRect(0, 0, w, h);
             hue += 0.5;
 
-            switch(mode) {
-                case 0: // Bars
-                    const bw = w / (dataArray.length * 0.6);
-                    for(let i=0; i<dataArray.length*0.6; i++) {
-                        const val = (dataArray[i]/255)*h*0.8;
-                        ctx.fillStyle = `hsla(${hue+i},70%,50%,0.8)`;
-                        ctx.fillRect(i*bw, h-val, bw-1, val);
-                    }
-                    break;
-                case 1: // Wave
-                    analyser.getByteTimeDomainData(dataArray);
-                    ctx.beginPath(); ctx.strokeStyle=`hsla(${hue},100%,60%,1)`; ctx.lineWidth=3;
-                    for(let i=0; i<dataArray.length; i++) {
-                        const x = (i/dataArray.length)*w;
-                        const y = (dataArray[i]/128)*cy;
-                        if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-                    }
-                    ctx.stroke();
-                    break;
-                case 2: // Radial
-                    for(let i=0; i<180; i++) {
-                        const a = i * Math.PI/90;
-                        const l = (dataArray[i]/255)*150;
-                        ctx.strokeStyle=`hsla(${hue+i},80%,50%,0.8)`; ctx.lineWidth=4;
-                        ctx.beginPath(); ctx.moveTo(cx,cy); 
-                        ctx.lineTo(cx+Math.cos(a)*(100+l), cy+Math.sin(a)*(100+l)); ctx.stroke();
-                    }
-                    break;
-                case 3: // Nebula
-                    const b = dataArray[2]/255;
-                    const g = ctx.createRadialGradient(cx,cy,0,cx,cy,b*h);
-                    g.addColorStop(0, `hsla(${hue},80%,50%,0.8)`); g.addColorStop(1, 'transparent');
-                    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,b*h,0,Math.PI*2); ctx.fill();
-                    break;
-                case 4: // Spiral
-                    for(let i=0; i<120; i++) {
-                        const a = i*0.2 + hue*0.05; const r = i*4 + dataArray[i%50]*0.2;
-                        ctx.fillStyle=`hsla(${hue+i*2},70%,60%,0.8)`;
-                        ctx.beginPath(); ctx.arc(cx+Math.cos(a)*r, cy+Math.sin(a)*r, dataArray[i%50]/20+2, 0, Math.PI*2); ctx.fill();
-                    }
-                    break;
-                case 5: // Mirror
-                    const mw = (w/2)/(dataArray.length*0.4);
-                    for(let i=0; i<dataArray.length*0.4; i++) {
-                        const v = (dataArray[i]/255)*cy;
-                        ctx.fillStyle=`hsla(${hue+i},70%,50%,0.8)`;
-                        ctx.fillRect(cx+i*mw, cy-v/2, mw-1, v); ctx.fillRect(cx-i*mw, cy-v/2, mw-1, v);
-                    }
-                    break;
-                case 6: // Flower
-                    ctx.save(); ctx.translate(cx,cy); ctx.rotate(hue*0.01);
-                    for(let i=0; i<12; i++) {
-                        ctx.rotate(Math.PI/6); const v = dataArray[i*5];
-                        ctx.strokeStyle=`hsla(${hue+i*20},80%,60%,0.8)`; ctx.strokeRect(-v/2,-v/2,v,v);
-                    }
-                    ctx.restore();
-                    break;
-                case 7: // Matrix
-                    ctx.font="15px monospace";
-                    for(let i=0; i<40; i++) {
-                        const v = dataArray[i*4]; ctx.fillStyle=`hsla(120,100%,50%,${v/255})`;
-                        ctx.fillText(Math.floor(Math.random()*9), (w/40)*i, (v/255)*h);
-                    }
-                    break;
-                case 8: // DNA
-                    for(let i=0; i<50; i++) {
-                        const y = (h/50)*i; const off = Math.sin(i*0.2 + hue*0.1)*(dataArray[i%20]);
-                        ctx.fillStyle=`hsla(${hue+i*5},80%,60%,1)`;
-                        ctx.beginPath(); ctx.arc(cx+off, y, 5, 0, Math.PI*2); ctx.fill();
-                        ctx.beginPath(); ctx.arc(cx-off, y, 5, 0, Math.PI*2); ctx.fill();
-                    }
-                    break;
-                case 9: // Tunnel
-                    for(let i=0; i<20; i++) {
-                        const v = dataArray[i*10]/2; ctx.strokeStyle=`hsla(${hue+i*10},70%,50%,0.5)`;
-                        ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx,cy, i*20 + v, 0, Math.PI*2); ctx.stroke();
-                    }
-                    break;
+            // Render Modi
+            if(mode === 0) { // Modern Bars
+                const count = 64; const bw = w / count;
+                for(let i=0; i<count; i++) {
+                    const v = (dataArray[i*4]/255)*h*0.7;
+                    ctx.fillStyle = `hsla(${hue+i*5},70%,50%,0.8)`;
+                    ctx.fillRect(i*bw, h-v, bw-2, v);
+                }
+            } else if(mode === 1) { // Waveform
+                analyser.getByteTimeDomainData(dataArray);
+                ctx.beginPath(); ctx.strokeStyle=`hsla(${hue},100%,60%,1)`; ctx.lineWidth=3;
+                for(let i=0; i<dataArray.length; i++) {
+                    const x = (i/dataArray.length)*w; const y = (dataArray[i]/128)*cy;
+                    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+                }
+                ctx.stroke();
+            } else if(mode === 2) { // Radial
+                for(let i=0; i<120; i++) {
+                    const a = i * Math.PI/60; const l = (dataArray[i]/255)*h*0.25;
+                    ctx.strokeStyle=`hsla(${hue+i*2},80%,50%,0.8)`; ctx.lineWidth=4; ctx.lineCap="round";
+                    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*(h*0.1+l), cy+Math.sin(a)*(h*0.1+l)); ctx.stroke();
+                }
+            } else if(mode === 3) { // Nebula Pulse
+                const b = dataArray[2]/255; const g = ctx.createRadialGradient(cx,cy,0,cx,cy,b*h*0.7);
+                g.addColorStop(0, `hsla(${hue},80%,50%,0.7)`); g.addColorStop(1, 'transparent');
+                ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,b*h*0.7,0,Math.PI*2); ctx.fill();
+            } else if(mode === 4) { // Spiral Dots
+                for(let i=0; i<150; i++) {
+                    const a = i*0.2 + hue*0.05; const r = i*3 + dataArray[i%50]*0.2;
+                    ctx.fillStyle=`hsla(${hue+i*2},70%,60%,0.8)`;
+                    ctx.beginPath(); ctx.arc(cx+Math.cos(a)*r, cy+Math.sin(a)*r, dataArray[i%50]/25+1, 0, Math.PI*2); ctx.fill();
+                }
+            } else if(mode === 5) { // Mirror Central
+                const bw = (w/2)/40;
+                for(let i=0; i<40; i++) {
+                    const v = (dataArray[i*2]/255)*cy;
+                    ctx.fillStyle=`hsla(${hue+i*4},70%,50%,0.8)`;
+                    ctx.fillRect(cx+i*bw, cy-v/2, bw-1, v); ctx.fillRect(cx-i*bw, cy-v/2, bw-1, v);
+                }
+            } else if(mode === 6) { // Flower Geometry
+                ctx.save(); ctx.translate(cx,cy); ctx.rotate(hue*0.01);
+                for(let i=0; i<8; i++) {
+                    ctx.rotate(Math.PI/4); const v = dataArray[i*10];
+                    ctx.strokeStyle=`hsla(${hue+i*30},80%,60%,0.8)`; ctx.strokeRect(-v/2,-v/2,v,v);
+                }
+                ctx.restore();
+            } else if(mode === 7) { // Matrix Rain
+                ctx.font="bold 16px monospace";
+                for(let i=0; i<30; i++) {
+                    const v = dataArray[i*8]; ctx.fillStyle=`hsla(120,100%,50%,${v/255})`;
+                    ctx.fillText(String.fromCharCode(33+Math.random()*90), (w/30)*i, (v/255)*h);
+                }
+            } else if(mode === 8) { // DNA Strand
+                for(let i=0; i<40; i++) {
+                    const y = (h/40)*i; const off = Math.sin(i*0.3 + hue*0.1)*(dataArray[i%30]*0.8);
+                    ctx.fillStyle=`hsla(${hue+i*8},80%,60%,1)`;
+                    ctx.beginPath(); ctx.arc(cx+off, y, 4, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(cx-off, y, 4, 0, Math.PI*2); ctx.fill();
+                }
+            } else if(mode === 9) { // Tunnel
+                for(let i=0; i<15; i++) {
+                    const v = dataArray[i*12]/2; ctx.strokeStyle=`hsla(${hue+i*15},70%,50%,0.5)`;
+                    ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx,cy, i*25 + v, 0, Math.PI*2); ctx.stroke();
+                }
+            } else if(mode === 10) { // Orbit
+                for(let i=0; i<50; i++) {
+                    const a = (hue*0.02) + (i*0.5); const r = (dataArray[i]/255)*cx;
+                    ctx.fillStyle=`hsla(${hue-i*2},80%,60%,0.8)`;
+                    ctx.beginPath(); ctx.arc(cx+Math.cos(a)*r, cy+Math.sin(a)*(r*0.5), 3, 0, Math.PI*2); ctx.fill();
+                }
+            } else if(mode === 11) { // Solid Peak
+                ctx.beginPath(); ctx.fillStyle=`hsla(${hue},80%,40%,0.3)`;
+                ctx.moveTo(0,h);
+                for(let i=0; i<dataArray.length; i++) {
+                    ctx.lineTo((i/dataArray.length)*w, h-(dataArray[i]/255)*h*0.6);
+                }
+                ctx.lineTo(w,h); ctx.fill();
             }
         }
     </script>
