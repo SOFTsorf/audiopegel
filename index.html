@@ -3,83 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Visualizer v5 - Fullscreen Fixed</title>
+    <title>Visualizer Pro - Ultra Edition</title>
     <style>
         :root { --accent: #00f2ff; --bg: #000; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            background: var(--bg); overflow: hidden; font-family: 'Segoe UI', sans-serif;
-            touch-action: none; 
+            background: var(--bg); overflow: hidden; font-family: 'Inter', sans-serif;
+            touch-action: none; color: white;
         }
-        canvas { position: absolute; top: 0; left: 0; display: block; width: 100%; height: 100%; cursor: none; }
+        canvas { position: absolute; top: 0; left: 0; display: block; width: 100%; height: 100%; }
 
-        /* UI Layer */
         .ui-layer {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; 
-            z-index: 100; background: rgba(0, 0, 0, 0.85); padding: 12px; 
-            border-radius: 20px; backdrop-filter: blur(20px);
-            width: 95%; max-width: 700px;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); 
-            border: 1px solid rgba(255,255,255,0.1);
-            opacity: 1;
+            position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; 
+            z-index: 100; background: rgba(0, 0, 0, 0.8); padding: 10px; 
+            border-radius: 15px; backdrop-filter: blur(15px);
+            width: 98%; max-width: 900px;
+            transition: all 0.5s ease; border: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* VOLLBILD LOGIK: UI komplett weg, wenn aktiv */
-        body.is-fullscreen .ui-layer { opacity: 0; pointer-events: none; transform: translate(-50%, 100px); }
-        
-        /* UI kurz zeigen bei Interaktion im Vollbild */
+        body.is-fullscreen .ui-layer { opacity: 0; pointer-events: none; transform: translate(-50%, 120px); }
         body.is-fullscreen.show-ui .ui-layer { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
 
         button {
-            background: rgba(255,255,255,0.1); border: none; color: #fff;
-            padding: 10px; border-radius: 10px; cursor: pointer; 
-            font-size: 10px; flex: 1 1 65px; text-transform: uppercase;
-            transition: 0.2s;
+            background: rgba(255,255,255,0.05); border: none; color: #aaa;
+            padding: 8px 5px; border-radius: 6px; cursor: pointer; 
+            font-size: 9px; flex: 1 1 45px; text-transform: uppercase;
         }
-        button.active { background: var(--accent); color: #000; font-weight: bold; box-shadow: 0 0 15px var(--accent); }
-        button.fs-toggle { background: rgba(0, 242, 255, 0.2); border: 1px solid var(--accent); flex: 1 1 100px; }
+        button.active { background: var(--accent); color: #000; font-weight: bold; box-shadow: 0 0 10px var(--accent); }
+        button.special { background: rgba(255, 0, 150, 0.3); color: white; font-weight: bold; }
 
         #start-screen {
             position: fixed; inset: 0; background: #000; z-index: 200;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            color: white; cursor: pointer; text-align: center;
         }
-
-        .hint { 
-            position: fixed; top: 15px; width: 100%; text-align: center; 
-            color: rgba(255,255,255,0.3); font-size: 10px; z-index: 5;
-            pointer-events: none; text-transform: uppercase; letter-spacing: 2px;
+        .btn-main {
+            background: var(--accent); color: black; padding: 20px 40px; 
+            border-radius: 50px; font-weight: bold; font-size: 18px; border: none; cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <div id="start-screen" onclick="initApp()">
-        <h1 style="letter-spacing: 12px; font-weight: 200; margin-bottom: 15px;">V I S U A L I Z E R</h1>
-        <p style="color: var(--accent); font-size: 14px;">KLICKEN ZUM STARTEN</p>
-        <p style="font-size: 10px; opacity: 0.5; margin-top: 20px;">Bildschirm bleibt an • Telefon-Modus blockiert</p>
+    <div id="start-screen">
+        <h1 style="letter-spacing: 15px; font-weight: 100;">U L T R A</h1>
+        <button class="btn-main" onclick="initApp()">START VISUALIZER</button>
+        <p style="margin-top: 20px; opacity: 0.5; font-size: 12px;">SCREEN WAKE-LOCK ACTIVE</p>
     </div>
-
-    <div class="hint">TAP: WECHSELN | 'F': VOLLBILD</div>
 
     <canvas id="canvas"></canvas>
 
     <div class="ui-layer" id="controls">
-        <button onclick="setMode(0, event)">Bars</button>
-        <button onclick="setMode(1, event)">Wave</button>
-        <button onclick="setMode(2, event)">Radial</button>
-        <button onclick="setMode(3, event)">Nebula</button>
-        <button onclick="setMode(4, event)">Spiral</button>
-        <button onclick="setMode(5, event)">Mirror</button>
-        <button onclick="setMode(6, event)">Flower</button>
-        <button onclick="setMode(7, event)">Matrix</button>
-        <button onclick="setMode(8, event)">DNA</button>
-        <button onclick="setMode(9, event)">Tunnel</button>
-        <button onclick="setMode(10, event)">Orbit</button>
-        <button onclick="setMode(11, event)">Peak</button>
-        <button onclick="toggleFS(event)" class="fs-toggle">VOLLBILD AN/AUS</button>
+        <div id="mode-buttons" style="display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; width: 100%;"></div>
+        <button onclick="toggleFS()" class="special" style="flex: 1 1 100%; margin-top: 5px;">FULLSCREEN (F)</button>
     </div>
 
     <script>
@@ -89,181 +66,264 @@
         let mode = 0;
         let hue = 0;
         let uiTimeout;
+        let isFilmMode = false;
+
+        const visualNames = [
+            "Bars", "Wave", "Radial", "Nebula", "Spiral", "Mirror", "Flower", "Matrix", 
+            "DNA", "Tunnel", "Orbit", "Peak", "Laser", "Grid", "Particles", 
+            "Neon Rain", "Ghost", "Plasma", "Invert", "Spikes"
+        ];
 
         function resize() {
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = window.innerWidth * dpr;
-            canvas.height = window.innerHeight * dpr;
-            ctx.scale(dpr, dpr);
+            canvas.width = window.innerWidth * window.devicePixelRatio;
+            canvas.height = window.innerHeight * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         }
         window.addEventListener('resize', resize);
         resize();
 
+        // UI-Buttons erstellen
+        const btnContainer = document.getElementById('mode-buttons');
+        visualNames.forEach((name, i) => {
+            const btn = document.createElement('button');
+            btn.innerText = name;
+            btn.id = `btn-${i}`;
+            btn.onclick = (e) => { e.stopPropagation(); setMode(i); };
+            btnContainer.appendChild(btn);
+        });
+        
+        // Film-Button
+        const filmBtn = document.createElement('button');
+        filmBtn.innerText = "FILM MODE";
+        filmBtn.classList.add('special');
+        filmBtn.onclick = (e) => { e.stopPropagation(); toggleFilmMode(); };
+        btnContainer.appendChild(filmBtn);
+
         async function initApp() {
-            if (audioCtx) return;
-
-            // Screen Wake Lock
-            if ('wakeLock' in navigator) {
-                try { wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
-            }
-
             try {
-                // Telefon-Modus verhindern (echoCancellation: false)
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } 
                 });
-
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 source = audioCtx.createMediaStreamSource(stream);
                 analyser = audioCtx.createAnalyser();
                 analyser.fftSize = 1024;
-                analyser.smoothingTimeConstant = 0.85;
                 dataArray = new Uint8Array(analyser.frequencyBinCount);
-                
                 source.connect(analyser);
-
+                
+                requestWakeLock();
                 document.getElementById('start-screen').style.display = 'none';
-                updateUI();
                 draw();
-            } catch (err) { alert("Mikrofon-Zugriff erforderlich."); }
+            } catch (err) { alert("Mikrofon Zugriff verweigert."); }
         }
 
-        // Modus-Wechsel per Pointer (verhindert Mehrfach-Trigger auf Mobile)
+        async function requestWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => { setTimeout(requestWakeLock, 1000); });
+                } catch (err) {}
+            }
+        }
+
+        function setMode(m) {
+            isFilmMode = false;
+            mode = m;
+            updateUI();
+        }
+
+        function toggleFilmMode() {
+            isFilmMode = !isFilmMode;
+            updateUI();
+        }
+
+        function updateUI() {
+            visualNames.forEach((_, i) => document.getElementById(`btn-${i}`).classList.toggle('active', mode === i && !isFilmMode));
+            filmBtn.classList.toggle('active', isFilmMode);
+        }
+
+        function toggleFS() {
+            if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+            else document.exitFullscreen();
+        }
+
         window.addEventListener('pointerdown', (e) => {
-            if(e.target.tagName !== 'BUTTON' && audioCtx) {
-                mode = (mode + 1) % 12;
+            if(e.target.tagName !== 'BUTTON') {
+                mode = (mode + 1) % visualNames.length;
+                isFilmMode = false;
                 updateUI();
             }
             showUI();
         });
 
-        function setMode(m, e) {
-            e.stopPropagation();
-            mode = m;
-            updateUI();
-        }
-
-        function updateUI() {
-            const btns = document.querySelectorAll('button');
-            btns.forEach((b, i) => { if(i < 12) b.classList.toggle('active', i === mode); });
-        }
-
-        // ECHTER VOLLBILD MODUS
-        function toggleFS(e) {
-            if(e) e.stopPropagation();
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(e => {});
-                document.body.classList.add('is-fullscreen');
-            } else {
-                document.exitFullscreen();
-                document.body.classList.remove('is-fullscreen');
-            }
-        }
-
-        document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement) document.body.classList.remove('is-fullscreen');
-            else document.body.classList.add('is-fullscreen');
-        });
-
-        window.addEventListener('keydown', e => { if(e.key.toLowerCase() === 'f') toggleFS(); });
-
-        // UI Einblenden bei Bewegung
         function showUI() {
             document.body.classList.add('show-ui');
             clearTimeout(uiTimeout);
             uiTimeout = setTimeout(() => document.body.classList.remove('show-ui'), 3000);
         }
-        window.addEventListener('mousemove', showUI);
-        window.addEventListener('touchstart', showUI);
+
+        // --- FILM MODE LOGIC ---
+        setInterval(() => {
+            if(isFilmMode) {
+                mode = (mode + 1) % visualNames.length;
+                updateUI();
+            }
+        }, 12000);
 
         function draw() {
             requestAnimationFrame(draw);
             analyser.getByteFrequencyData(dataArray);
-            const w = window.innerWidth, h = window.innerHeight;
-            const cx = w/2, cy = h/2;
-
-            // Hintergrund mit Fade für "Smoothness" ohne Rückstände
+            const w = window.innerWidth, h = window.innerHeight, cx = w/2, cy = h/2;
+            
             ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
             ctx.fillRect(0, 0, w, h);
             hue += 0.5;
 
-            // Render Modi
-            if(mode === 0) { // Modern Bars
-                const count = 64; const bw = w / count;
-                for(let i=0; i<count; i++) {
-                    const v = (dataArray[i*4]/255)*h*0.7;
-                    ctx.fillStyle = `hsla(${hue+i*5},70%,50%,0.8)`;
-                    ctx.fillRect(i*bw, h-v, bw-2, v);
-                }
-            } else if(mode === 1) { // Waveform
-                analyser.getByteTimeDomainData(dataArray);
-                ctx.beginPath(); ctx.strokeStyle=`hsla(${hue},100%,60%,1)`; ctx.lineWidth=3;
-                for(let i=0; i<dataArray.length; i++) {
-                    const x = (i/dataArray.length)*w; const y = (dataArray[i]/128)*cy;
-                    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-                }
-                ctx.stroke();
-            } else if(mode === 2) { // Radial
-                for(let i=0; i<120; i++) {
-                    const a = i * Math.PI/60; const l = (dataArray[i]/255)*h*0.25;
-                    ctx.strokeStyle=`hsla(${hue+i*2},80%,50%,0.8)`; ctx.lineWidth=4; ctx.lineCap="round";
-                    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*(h*0.1+l), cy+Math.sin(a)*(h*0.1+l)); ctx.stroke();
-                }
-            } else if(mode === 3) { // Nebula Pulse
-                const b = dataArray[2]/255; const g = ctx.createRadialGradient(cx,cy,0,cx,cy,b*h*0.7);
-                g.addColorStop(0, `hsla(${hue},80%,50%,0.7)`); g.addColorStop(1, 'transparent');
-                ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,b*h*0.7,0,Math.PI*2); ctx.fill();
-            } else if(mode === 4) { // Spiral Dots
-                for(let i=0; i<150; i++) {
-                    const a = i*0.2 + hue*0.05; const r = i*3 + dataArray[i%50]*0.2;
-                    ctx.fillStyle=`hsla(${hue+i*2},70%,60%,0.8)`;
-                    ctx.beginPath(); ctx.arc(cx+Math.cos(a)*r, cy+Math.sin(a)*r, dataArray[i%50]/25+1, 0, Math.PI*2); ctx.fill();
-                }
-            } else if(mode === 5) { // Mirror Central
-                const bw = (w/2)/40;
-                for(let i=0; i<40; i++) {
-                    const v = (dataArray[i*2]/255)*cy;
-                    ctx.fillStyle=`hsla(${hue+i*4},70%,50%,0.8)`;
-                    ctx.fillRect(cx+i*bw, cy-v/2, bw-1, v); ctx.fillRect(cx-i*bw, cy-v/2, bw-1, v);
-                }
-            } else if(mode === 6) { // Flower Geometry
-                ctx.save(); ctx.translate(cx,cy); ctx.rotate(hue*0.01);
-                for(let i=0; i<8; i++) {
-                    ctx.rotate(Math.PI/4); const v = dataArray[i*10];
-                    ctx.strokeStyle=`hsla(${hue+i*30},80%,60%,0.8)`; ctx.strokeRect(-v/2,-v/2,v,v);
-                }
-                ctx.restore();
-            } else if(mode === 7) { // Matrix Rain
-                ctx.font="bold 16px monospace";
-                for(let i=0; i<30; i++) {
-                    const v = dataArray[i*8]; ctx.fillStyle=`hsla(120,100%,50%,${v/255})`;
-                    ctx.fillText(String.fromCharCode(33+Math.random()*90), (w/30)*i, (v/255)*h);
-                }
-            } else if(mode === 8) { // DNA Strand
-                for(let i=0; i<40; i++) {
-                    const y = (h/40)*i; const off = Math.sin(i*0.3 + hue*0.1)*(dataArray[i%30]*0.8);
-                    ctx.fillStyle=`hsla(${hue+i*8},80%,60%,1)`;
-                    ctx.beginPath(); ctx.arc(cx+off, y, 4, 0, Math.PI*2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(cx-off, y, 4, 0, Math.PI*2); ctx.fill();
-                }
-            } else if(mode === 9) { // Tunnel
-                for(let i=0; i<15; i++) {
-                    const v = dataArray[i*12]/2; ctx.strokeStyle=`hsla(${hue+i*15},70%,50%,0.5)`;
-                    ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx,cy, i*25 + v, 0, Math.PI*2); ctx.stroke();
-                }
-            } else if(mode === 10) { // Orbit
-                for(let i=0; i<50; i++) {
-                    const a = (hue*0.02) + (i*0.5); const r = (dataArray[i]/255)*cx;
-                    ctx.fillStyle=`hsla(${hue-i*2},80%,60%,0.8)`;
-                    ctx.beginPath(); ctx.arc(cx+Math.cos(a)*r, cy+Math.sin(a)*(r*0.5), 3, 0, Math.PI*2); ctx.fill();
-                }
-            } else if(mode === 11) { // Solid Peak
-                ctx.beginPath(); ctx.fillStyle=`hsla(${hue},80%,40%,0.3)`;
-                ctx.moveTo(0,h);
-                for(let i=0; i<dataArray.length; i++) {
-                    ctx.lineTo((i/dataArray.length)*w, h-(dataArray[i]/255)*h*0.6);
-                }
-                ctx.lineTo(w,h); ctx.fill();
+            // Zeichne den Modus basierend auf 'mode'
+            ctx.save();
+            renderMode(mode, w, h, cx, cy);
+            ctx.restore();
+        }
+
+        function renderMode(m, w, h, cx, cy) {
+            const bass = dataArray[2] / 255;
+            switch(m) {
+                case 0: // Bars
+                    const bw = w / 64;
+                    for(let i=0; i<64; i++) {
+                        const v = (dataArray[i*4]/255)*h*0.7;
+                        ctx.fillStyle = `hsla(${hue+i*5},70%,50%,0.8)`;
+                        ctx.fillRect(i*bw, h-v, bw-2, v);
+                    }
+                    break;
+                case 1: // Wave
+                    analyser.getByteTimeDomainData(dataArray);
+                    ctx.beginPath(); ctx.strokeStyle=`hsla(${hue},100%,60%,1)`; ctx.lineWidth=3;
+                    for(let i=0; i<dataArray.length; i++) {
+                        ctx.lineTo((i/dataArray.length)*w, (dataArray[i]/128)*cy);
+                    }
+                    ctx.stroke();
+                    break;
+                case 2: // Radial
+                    for(let i=0; i<120; i++) {
+                        const a = i * (Math.PI/60); const l = (dataArray[i]/255)*h*0.25;
+                        ctx.strokeStyle=`hsla(${hue+i*2},80%,50%,0.8)`; ctx.lineWidth=4;
+                        ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*(h*0.1+l), cy+Math.sin(a)*(h*0.1+l)); ctx.stroke();
+                    }
+                    break;
+                case 3: // Nebula
+                    const g = ctx.createRadialGradient(cx,cy,0,cx,cy,bass*h*0.7);
+                    g.addColorStop(0, `hsla(${hue},80%,50%,0.7)`); g.addColorStop(1, 'transparent');
+                    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,bass*h*0.7,0,Math.PI*2); ctx.fill();
+                    break;
+                case 4: // Spiral
+                    for(let i=0; i<100; i++) {
+                        const a = i*0.2 + hue*0.05; const r = i*4 + dataArray[i]*0.2;
+                        ctx.fillStyle=`hsla(${hue+i*2},70%,60%,0.8)`;
+                        ctx.beginPath(); ctx.arc(cx+Math.cos(a)*r, cy+Math.sin(a)*r, 3, 0, Math.PI*2); ctx.fill();
+                    }
+                    break;
+                case 5: // Mirror
+                    const mw = (w/2)/40;
+                    for(let i=0; i<40; i++) {
+                        const v = (dataArray[i]/255)*cy;
+                        ctx.fillStyle=`hsla(${hue+i*4},70%,50%,0.8)`;
+                        ctx.fillRect(cx+i*mw, cy-v/2, mw-1, v); ctx.fillRect(cx-i*mw, cy-v/2, mw-1, v);
+                    }
+                    break;
+                case 6: // Flower
+                    ctx.translate(cx,cy); ctx.rotate(hue*0.01);
+                    for(let i=0; i<8; i++) {
+                        ctx.rotate(Math.PI/4); const v = dataArray[i*10];
+                        ctx.strokeStyle=`hsla(${hue+i*30},80%,60%,0.8)`; ctx.strokeRect(-v/2,-v/2,v,v);
+                    }
+                    break;
+                case 7: // Matrix
+                    ctx.font="14px monospace";
+                    for(let i=0; i<30; i++) {
+                        ctx.fillStyle=`hsla(120,100%,50%,${dataArray[i*8]/255})`;
+                        ctx.fillText(Math.random()>0.5?"1":"0", (w/30)*i, (dataArray[i*8]/255)*h);
+                    }
+                    break;
+                case 8: // DNA
+                    for(let i=0; i<30; i++) {
+                        const y = (h/30)*i; const off = Math.sin(i*0.3 + hue*0.1)*(dataArray[i]*0.5);
+                        ctx.fillStyle=`hsla(${hue+i*10},80%,60%,1)`;
+                        ctx.beginPath(); ctx.arc(cx+off, y, 5, 0, Math.PI*2); ctx.fill();
+                        ctx.beginPath(); ctx.arc(cx-off, y, 5, 0, Math.PI*2); ctx.fill();
+                    }
+                    break;
+                case 9: // Tunnel
+                    for(let i=0; i<20; i++) {
+                        ctx.strokeStyle=`hsla(${hue+i*10},70%,50%,0.5)`; ctx.lineWidth=3;
+                        ctx.beginPath(); ctx.arc(cx,cy, i*20 + dataArray[i*5]/2, 0, Math.PI*2); ctx.stroke();
+                    }
+                    break;
+                case 10: // Orbit
+                    for(let i=0; i<40; i++) {
+                        const a = (hue*0.02) + (i*0.5); const r = (dataArray[i]/255)*cx;
+                        ctx.fillStyle=`hsla(${hue-i*2},80%,60%,0.8)`;
+                        ctx.beginPath(); ctx.arc(cx+Math.cos(a)*r, cy+Math.sin(a)*(r*0.3), 4, 0, Math.PI*2); ctx.fill();
+                    }
+                    break;
+                case 11: // Peak
+                    ctx.beginPath(); ctx.fillStyle=`hsla(${hue},80%,50%,0.3)`; ctx.moveTo(0,h);
+                    for(let i=0; i<dataArray.length; i+=5) ctx.lineTo((i/dataArray.length)*w, h-(dataArray[i]/255)*h);
+                    ctx.lineTo(w,h); ctx.fill();
+                    break;
+                case 12: // Laser
+                    for(let i=0; i<10; i++) {
+                        ctx.strokeStyle=`hsla(${hue+i*36},100%,50%,0.8)`; ctx.lineWidth=2;
+                        ctx.beginPath(); ctx.moveTo(cx,cy); 
+                        ctx.lineTo(cx+Math.cos(hue*0.02+i)*w, cy+Math.sin(hue*0.02+i)*h*bass); ctx.stroke();
+                    }
+                    break;
+                case 13: // Grid
+                    const s = 40;
+                    for(let x=0; x<w; x+=s) {
+                        for(let y=0; y<h; y+=s) {
+                            const d = dataArray[(x+y)%100]/255;
+                            ctx.fillStyle=`hsla(${hue},80%,50%,${d})`;
+                            ctx.fillRect(x,y,s*d,s*d);
+                        }
+                    }
+                    break;
+                case 14: // Particles
+                    for(let i=0; i<50; i++) {
+                        ctx.fillStyle=`white`;
+                        const x = (Math.sin(i+hue*0.01)*cx*bass)+cx;
+                        const y = (Math.cos(i+hue*0.01)*cy*bass)+cy;
+                        ctx.beginPath(); ctx.arc(x,y,2,0,Math.PI*2); ctx.fill();
+                    }
+                    break;
+                case 15: // Neon Rain
+                    for(let i=0; i<20; i++) {
+                        ctx.fillStyle= `hsla(${hue},100%,50%,0.5)`;
+                        ctx.fillRect((w/20)*i, 0, 2, (dataArray[i*10]/255)*h);
+                    }
+                    break;
+                case 16: // Ghost
+                    ctx.lineWidth = bass * 20; ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.1)`;
+                    ctx.strokeRect(cx-dataArray[10], cy-dataArray[10], dataArray[10]*2, dataArray[10]*2);
+                    break;
+                case 17: // Plasma
+                    const grd = ctx.createLinearGradient(0,0,w,h);
+                    grd.addColorStop(0, `hsla(${hue}, 100%, 50%, 0.5)`);
+                    grd.addColorStop(1, `hsla(${hue+100}, 100%, 50%, 0.5)`);
+                    ctx.fillStyle = grd; ctx.globalAlpha = bass; ctx.fillRect(0,0,w,h); ctx.globalAlpha = 1;
+                    break;
+                case 18: // Invert
+                    ctx.fillStyle = "white"; ctx.fillRect(cx-bass*100, cy-bass*100, bass*200, bass*200);
+                    break;
+                case 19: // Spikes
+                    ctx.translate(cx,cy);
+                    for(let i=0; i<360; i+=10) {
+                        const rad = i * Math.PI/180;
+                        const l = dataArray[i%100];
+                        ctx.strokeStyle = "white"; ctx.beginPath();
+                        ctx.moveTo(0,0); ctx.lineTo(Math.cos(rad)*l, Math.sin(rad)*l); ctx.stroke();
+                    }
+                    break;
             }
         }
     </script>
