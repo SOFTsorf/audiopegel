@@ -3,270 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elegant Audio Visualizer</title>
+    <title>Ultimate Audio Visualizer</title>
     <style>
-        :root {
-            --accent-color: #00f2ff;
-            --bg-color: #0a0a0a;
-        }
-
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-color);
-            color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-        }
-
-        /* UI Controls */
-        .controls {
-            position: fixed;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 15px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 15px 25px;
-            border-radius: 50px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: opacity 0.5s ease;
-            z-index: 10;
-        }
-
-        /* Ausblenden im Vollbildmodus */
-        body.fullscreen-active .controls {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        button {
-            background: none;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 14px;
-        }
-
-        button:hover {
-            background: var(--accent-color);
-            color: black;
-            border-color: var(--accent-color);
-            box-shadow: 0 0 15px var(--accent-color);
-        }
-
-        button.active {
-            background: white;
-            color: black;
-        }
-
-        #start-overlay {
-            position: fixed;
-            z-index: 20;
-            text-align: center;
-            cursor: pointer;
+        :root { --accent: #00f2ff; }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: #000; overflow: hidden; font-family: 'Segoe UI', sans-serif;
         }
         
-        #start-overlay h1 {
-            font-weight: 200;
-            letter-spacing: 5px;
-            animation: pulse 2s infinite;
+        canvas { position: absolute; top: 0; left: 0; display: block; }
+
+        /* UI Styling */
+        .ui-layer {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 10px; z-index: 10;
+            background: rgba(0, 0, 0, 0.6); padding: 12px; border-radius: 50px;
+            backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1);
+            transition: opacity 0.5s ease, transform 0.5s ease;
         }
 
-        @keyframes pulse {
-            0% { opacity: 0.5; }
-            50% { opacity: 1; }
-            100% { opacity: 0.5; }
+        body.fullscreen-active .ui-layer { opacity: 0; transform: translate(-50%, 20px); }
+        body.fullscreen-active:hover .ui-layer { opacity: 1; transform: translate(-50%, 0); }
+
+        button {
+            background: rgba(255,255,255,0.05); border: none; color: #ccc;
+            padding: 8px 16px; border-radius: 25px; cursor: pointer; transition: 0.2s;
         }
+        button.active { background: var(--accent); color: #000; font-weight: bold; box-shadow: 0 0 15px var(--accent); }
+
+        #start-screen {
+            position: fixed; inset: 0; background: #000; z-index: 100;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            color: white; cursor: pointer;
+        }
+
+        .hint { position: fixed; top: 20px; width: 100%; text-align: center; color: rgba(255,255,255,0.2); font-size: 12px; pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <div id="start-overlay">
-        <h1>KLICKEN ZUM STARTEN</h1>
-        <p>Mikrofon wird benötigt</p>
+    <div id="start-screen">
+        <h1 style="letter-spacing: 10px; font-weight: 200;">AUDIO VIZ</h1>
+        <p style="color: var(--accent)">KLICKEN ZUM STARTEN</p>
     </div>
 
-    <canvas id="visualizer"></canvas>
+    <div class="hint">KLICK / TAP ZUM WECHSELN | 'F' FÜR VOLLBILD</div>
 
-    <div class="controls" id="ui-controls">
-        <button onclick="setMode('bars')" id="btn-bars">Balken</button>
-        <button onclick="setMode('wave')" id="btn-wave">Welle</button>
-        <button onclick="setMode('circle')" id="btn-circle">Kreis</button>
-        <button onclick="toggleFullscreen()">Vollbild [F]</button>
+    <canvas id="canvas"></canvas>
+
+    <div class="ui-layer" id="controls">
+        <button onclick="changeMode(0)" id="m0">Bars</button>
+        <button onclick="changeMode(1)" id="m1">Wave</button>
+        <button onclick="changeMode(2)" id="m2">Circle</button>
+        <button onclick="changeMode(3)" id="m3">Dots</button>
+        <button onclick="changeMode(4)" id="m4">Mirror</button>
+        <button onclick="changeMode(5)" id="m5">Nebula</button>
     </div>
 
     <script>
-        const canvas = document.getElementById('visualizer');
+        const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const overlay = document.getElementById('start-overlay');
-        const controls = document.getElementById('ui-controls');
+        let audioCtx, analyser, dataArray, source;
+        let mode = 0;
+        let hue = 200;
 
-        let audioCtx, analyser, source, dataArray;
-        let animationId;
-        let currentMode = 'bars';
-
-        // Canvas Größe anpassen
-        function resize() {
+        function initCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         }
-        window.addEventListener('resize', resize);
-        resize();
+        window.addEventListener('resize', initCanvas);
+        initCanvas();
 
-        // Audio Setup
-        async function initAudio() {
+        async function setupAudio() {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            source = audioCtx.createMediaStreamSource(stream);
             analyser = audioCtx.createAnalyser();
+            analyser.fftSize = 512;
+            analyser.smoothingTimeConstant = 0.8; // Verhindert hektisches Flackern
             
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                source = audioCtx.createMediaStreamSource(stream);
-                source.connect(analyser);
-                
-                // Feinabstimmung für smoothe Daten
-                analyser.fftSize = 512; 
-                analyser.smoothingTimeConstant = 0.8; // Macht die Bewegung "eleganter"
-                
-                const bufferLength = analyser.frequencyBinCount;
-                dataArray = new Uint8Array(bufferLength);
-                
-                overlay.style.display = 'none';
-                draw();
-            } catch (err) {
-                alert("Mikrofon-Zugriff verweigert oder nicht verfügbar.");
+            dataArray = new Uint8Array(analyser.frequencyBinCount);
+            source.connect(analyser);
+            
+            document.getElementById('start-screen').style.display = 'none';
+            changeMode(0);
+            draw();
+        }
+
+        document.getElementById('start-screen').addEventListener('click', setupAudio);
+
+        // Wechsel per Klick auf Hintergrund
+        window.addEventListener('click', (e) => {
+            if(e.target.tagName !== 'BUTTON' && audioCtx) {
+                mode = (mode + 1) % 6;
+                changeMode(mode);
             }
+        });
+
+        function changeMode(newMode) {
+            mode = newMode;
+            document.querySelectorAll('button').forEach((b, i) => b.classList.toggle('active', i === mode));
         }
 
-        overlay.addEventListener('click', initAudio);
-
-        function setMode(mode) {
-            currentMode = mode;
-            document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
-            document.getElementById('btn-' + mode).classList.add('active');
-        }
-
-        function toggleFullscreen() {
+        function toggleFS() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen();
                 document.body.classList.add('fullscreen-active');
             } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                    document.body.classList.remove('fullscreen-active');
-                }
-            }
-        }
-
-        // Überwachung des Vollbild-Status (falls mit ESC beendet wird)
-        document.addEventListener('fullscreenchange', () => {
-            if (!document.fullscreenElement) {
+                document.exitFullscreen();
                 document.body.classList.remove('fullscreen-active');
             }
-        });
+        }
+        window.addEventListener('keydown', e => { if(e.key.toLowerCase() === 'f') toggleFS(); });
 
         function draw() {
-            animationId = requestAnimationFrame(draw);
+            requestAnimationFrame(draw);
             analyser.getByteFrequencyData(dataArray);
 
-            // Hintergrund leicht transparent übermalen für "Motion Blur" Effekt
-            ctx.fillStyle = 'rgba(10, 10, 10, 0.2)';
+            // SAUBERES CLEARING: Verhindert die Rückstände aus deinem Bild
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'; 
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            if (currentMode === 'bars') drawBars();
-            if (currentMode === 'wave') drawWave();
-            if (currentMode === 'circle') drawCircle();
-        }
-
-        function drawBars() {
-            const barWidth = (canvas.width / dataArray.length) * 2.5;
-            let x = 0;
-
-            for (let i = 0; i < dataArray.length; i++) {
-                const barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
-                
-                // Farbverlauf
-                const hue = (i / dataArray.length) * 360;
-                ctx.fillStyle = `hsla(${hue}, 80%, 60%, 0.8)`;
-                
-                // Abgerundete Balken zeichnen
-                ctx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
-                x += barWidth;
-            }
-        }
-
-        function drawWave() {
-            analyser.getByteTimeDomainData(dataArray);
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#00f2ff';
-            ctx.beginPath();
-
-            const sliceWidth = canvas.width / dataArray.length;
-            let x = 0;
-
-            for (let i = 0; i < dataArray.length; i++) {
-                const v = dataArray[i] / 128.0;
-                const y = v * canvas.height / 2;
-
-                if (i === 0) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-                x += sliceWidth;
-            }
-            ctx.stroke();
-        }
-
-        function drawCircle() {
+            const barCount = dataArray.length * 0.8; // Hohe tote Frequenzen ignorieren
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-            const radius = 150;
+            hue += 0.5; // Langsamer Farbwechsel für Eleganz
 
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
-            ctx.stroke();
-
-            for (let i = 0; i < dataArray.length; i++) {
-                const angle = (i / dataArray.length) * Math.PI * 2;
-                const amplitude = (dataArray[i] / 255) * 100;
-                const x1 = centerX + Math.cos(angle) * radius;
-                const y1 = centerY + Math.sin(angle) * radius;
-                const x2 = centerX + Math.cos(angle) * (radius + amplitude);
-                const y2 = centerY + Math.sin(angle) * (radius + amplitude);
-
-                ctx.strokeStyle = `hsla(${(i/dataArray.length)*360}, 100%, 50%, 0.8)`;
-                ctx.lineWidth = 4;
-                ctx.lineCap = 'round';
+            if (mode === 0) { // Modern Bars
+                const barWidth = canvas.width / barCount;
+                for (let i = 0; i < barCount; i++) {
+                    const h = (dataArray[i] / 255) * canvas.height * 0.6;
+                    ctx.fillStyle = `hsla(${hue + i}, 70%, 50%, 0.8)`;
+                    ctx.fillRect(i * barWidth, canvas.height - h, barWidth - 2, h);
+                }
+            } 
+            else if (mode === 1) { // Floating Wave
+                analyser.getByteTimeDomainData(dataArray);
                 ctx.beginPath();
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = `hsla(${hue}, 80%, 60%, 1)`;
+                let x = 0;
+                let slice = canvas.width / dataArray.length;
+                for(let i=0; i < dataArray.length; i++) {
+                    let v = dataArray[i] / 128.0;
+                    let y = v * centerY;
+                    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+                    x += slice;
+                }
                 ctx.stroke();
             }
+            else if (mode === 2) { // Ring Visualizer
+                for (let i = 0; i < barCount; i++) {
+                    const angle = (i / barCount) * Math.PI * 2;
+                    const len = (dataArray[i] / 255) * 150;
+                    const xStart = centerX + Math.cos(angle) * 100;
+                    const yStart = centerY + Math.sin(angle) * 100;
+                    const xEnd = centerX + Math.cos(angle) * (100 + len);
+                    const yEnd = centerY + Math.sin(angle) * (100 + len);
+                    
+                    ctx.strokeStyle = `hsla(${hue + i}, 80%, 50%, 0.8)`;
+                    ctx.lineWidth = 4;
+                    ctx.lineCap = "round";
+                    ctx.beginPath();
+                    ctx.moveTo(xStart, yStart);
+                    ctx.lineTo(xEnd, yEnd);
+                    ctx.stroke();
+                }
+            }
+            else if (mode === 3) { // Particles / Dots
+                for (let i = 0; i < barCount; i+=2) {
+                    const val = dataArray[i];
+                    const x = (i / barCount) * canvas.width;
+                    const y = centerY + (Math.sin(i + hue/20) * 50);
+                    const size = (val / 255) * 30;
+                    ctx.fillStyle = `hsla(${hue - i}, 80%, 60%, 0.6)`;
+                    ctx.beginPath();
+                    ctx.arc(x, y - val, size, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+            else if (mode === 4) { // Mirror Peak
+                const bw = canvas.width / (barCount * 2);
+                for (let i = 0; i < barCount; i++) {
+                    const h = (dataArray[i] / 255) * centerY * 0.8;
+                    ctx.fillStyle = `hsla(${hue + i * 2}, 70%, 50%, 0.8)`;
+                    // Mitte nach links und rechts
+                    ctx.fillRect(centerX + i * bw, centerY - h/2, bw - 1, h);
+                    ctx.fillRect(centerX - i * bw, centerY - h/2, bw - 1, h);
+                }
+            }
+            else if (mode === 5) { // Nebula (Bass Pulse)
+                const bass = dataArray[0] / 255;
+                const grad = ctx.createRadialGradient(centerX, centerY, 10, centerX, centerY, bass * 400);
+                grad.addColorStop(0, `hsla(${hue}, 80%, 50%, 0.8)`);
+                grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, bass * 400, 0, Math.PI*2);
+                ctx.fill();
+            }
         }
-
-        // Shortcut für Vollbild
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'f' || e.key === 'F') toggleFullscreen();
-        });
-
-        setMode('bars');
     </script>
 </body>
 </html>
