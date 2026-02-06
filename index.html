@@ -3,94 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Visualizer Pro - Ultra Edition 3.0</title>
+    <title>Visualizer Pro - Extreme 4.0</title>
     <style>
-        :root { --accent: #00f2ff; --bg: #000; --glass: rgba(255, 255, 255, 0.05); }
+        :root { --accent: #00f2ff; --bg: #000; --glass: rgba(255, 255, 255, 0.07); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; }
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            background: var(--bg); overflow: hidden; font-family: 'Inter', sans-serif;
+            background: var(--bg); overflow: hidden; font-family: 'Segoe UI', Roboto, sans-serif;
             touch-action: none; color: white; cursor: none;
         }
         body.ui-active { cursor: default; }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: block; }
 
         .ui-layer {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
-            display: flex; flex-direction: column; align-items: center; gap: 10px;
-            z-index: 100; background: rgba(0, 0, 0, 0.7); padding: 15px; 
-            border-radius: 24px; backdrop-filter: blur(30px);
-            width: 95%; max-width: 900px;
-            opacity: 0; pointer-events: none; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(30px);
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            z-index: 100; background: rgba(0, 0, 0, 0.8); padding: 15px; 
+            border-radius: 20px; backdrop-filter: blur(25px);
+            width: 95%; max-width: 850px;
+            opacity: 0; pointer-events: none; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255,255,255,0.1);
         }
         body.ui-active .ui-layer { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
 
         .grid-container {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            gap: 5px; width: 100%;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+            gap: 4px; width: 100%;
         }
 
         button {
-            background: var(--glass); border: 1px solid rgba(255,255,255,0.1); color: #888;
-            padding: 10px 5px; border-radius: 10px; cursor: pointer; 
-            font-size: 9px; text-transform: uppercase; letter-spacing: 1px;
-            transition: 0.2s; font-weight: 600;
+            background: var(--glass); border: 1px solid rgba(255,255,255,0.05); color: #999;
+            padding: 10px 2px; border-radius: 8px; cursor: pointer; 
+            font-size: 8px; text-transform: uppercase; letter-spacing: 1px;
+            transition: 0.2s; font-weight: bold;
         }
-        button:hover { background: rgba(255,255,255,0.15); color: white; }
         button.active { 
             background: var(--accent); color: #000; 
-            box-shadow: 0 0 20px var(--accent); border-color: var(--accent);
+            box-shadow: 0 0 15px var(--accent); border-color: var(--accent);
         }
-        button.special { background: rgba(255, 0, 100, 0.2); color: #ff0066; border-color: #ff0066; }
-        button.special.active { background: #ff0066; color: white; box-shadow: 0 0 20px #ff0066; }
+        .controls-row { display: flex; gap: 5px; width: 100%; }
+        .special { background: rgba(255, 0, 100, 0.2); color: #ff0066; flex: 1; border: 1px solid #ff0066; }
+        .special.active { background: #ff0066; color: white; box-shadow: 0 0 20px #ff0066; }
+        .fs-btn { background: rgba(0, 242, 255, 0.1); color: var(--accent); flex: 1; border: 1px solid var(--accent); }
 
         #start-screen {
             position: fixed; inset: 0; background: #000; z-index: 200;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
+            text-align: center;
         }
         .btn-main {
-            background: transparent; color: var(--accent); padding: 25px 60px; 
-            border-radius: 100px; font-weight: 200; font-size: 28px; 
-            border: 1px solid var(--accent); cursor: pointer; letter-spacing: 8px;
-            transition: 0.5s; text-shadow: 0 0 10px var(--accent);
+            background: transparent; color: var(--accent); padding: 20px 50px; 
+            border-radius: 100px; font-size: 20px; border: 2px solid var(--accent); 
+            cursor: pointer; letter-spacing: 5px; transition: 0.4s;
         }
-        .btn-main:hover { background: var(--accent); color: black; box-shadow: 0 0 60px var(--accent); }
+        .btn-main:hover { background: var(--accent); color: black; box-shadow: 0 0 40px var(--accent); }
     </style>
 </head>
 <body>
 
     <div id="start-screen">
-        <h1 style="letter-spacing: 15px; font-weight: 100; margin-bottom: 50px; opacity: 0.8;">V I S U A L I Z E R 3.0</h1>
-        <button class="btn-main" onclick="initApp()">L A U N C H</button>
+        <h1 style="letter-spacing: 10px; font-weight: 100; margin-bottom: 30px;">ULTRA VISUALIZER 4.0</h1>
+        <button class="btn-main" onclick="initApp()">S T A R T</button>
+        <p style="margin-top: 20px; opacity: 0.4; font-size: 10px;">DOPPELTIPP FÜR VOLLBILD</p>
     </div>
 
     <canvas id="canvas"></canvas>
 
     <div class="ui-layer" id="controls">
         <div class="grid-container" id="mode-buttons"></div>
-        <button onclick="toggleFilmMode()" id="auto-btn" class="special" style="width: 100%; margin-top: 10px;">AUTO-PILOT ACTIVE (10s Cycle)</button>
+        <div class="controls-row">
+            <button onclick="toggleFS()" class="fs-btn">FULLSCREEN (F)</button>
+            <button onclick="toggleFilmMode()" id="auto-btn" class="special">AUTO-PILOT ACTIVE</button>
+        </div>
     </div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        
-        let audioCtx, analyser, source;
-        let dataArray, smoothArray;
+        let audioCtx, analyser, source, dataArray, smoothArray;
         let mode = 0, hue = 0, frame = 0, isFilmMode = true, uiTimeout;
 
         const visuals = [
             { name: "Nebula", draw: drawNebula },
             { name: "Hyperdrive", draw: drawHyperdrive },
-            { name: "Liquid Fire", draw: drawFire },
+            { name: "Fire", draw: drawFire },
             { name: "Vortex", draw: drawVortex },
-            { name: "Kaleid", draw: drawKaleidoscope },
-            { name: "Cyber Grid", draw: drawGrid },
-            { name: "Equalizer", draw: drawEq },
+            { name: "Kaleid", draw: drawKaleid },
+            { name: "Cyber", draw: drawGrid },
+            { name: "Eq Pro", draw: drawEq },
             { name: "Hexagon", draw: drawHex },
             { name: "Oscillo", draw: drawScope },
-            { name: "DNA", draw: drawDNA },
+            { name: "Neural", draw: drawNeural },
             { name: "Tunnel", draw: drawTunnel },
             { name: "Neon Rain", draw: drawRain },
             { name: "Pulse", draw: drawPulse },
@@ -99,10 +102,10 @@
             { name: "Matrix", draw: drawMatrix },
             { name: "Web", draw: drawWeb },
             { name: "Spikes", draw: drawSpikes },
-            { name: "Floating", draw: drawFloating },
+            { name: "Orbit", draw: drawOrbit },
             { name: "Mirror", draw: drawMirror },
-            { name: "Waves", draw: drawWaves },
-            { name: "Neural", draw: drawNeural }
+            { name: "Storm", draw: drawStorm },
+            { name: "DNA", draw: drawDNA }
         ];
 
         function resize() {
@@ -112,6 +115,7 @@
         window.addEventListener('resize', resize);
         resize();
 
+        // UI Erstellung
         const btnContainer = document.getElementById('mode-buttons');
         visuals.forEach((v, i) => {
             const btn = document.createElement('button');
@@ -124,7 +128,7 @@
         async function initApp() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                audioCtx = new AudioContext();
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 analyser = audioCtx.createAnalyser();
                 analyser.fftSize = 512;
                 source = audioCtx.createMediaStreamSource(stream);
@@ -134,10 +138,8 @@
                 
                 document.getElementById('start-screen').style.display = 'none';
                 if ('wakeLock' in navigator) navigator.wakeLock.request('screen');
-                updateUI();
-                triggerUI();
-                loop();
-            } catch (err) { alert("Mikrofon-Zugriff verweigert."); }
+                updateUI(); triggerUI(); loop();
+            } catch (err) { alert("Mikrofon benötigt!"); }
         }
 
         function loop() {
@@ -147,7 +149,7 @@
                 smoothArray[i] += (dataArray[i] - smoothArray[i]) * 0.15;
             }
 
-            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+            ctx.fillStyle = 'rgba(0,0,0,0.18)';
             ctx.fillRect(0,0,canvas.width, canvas.height);
             
             hue += 0.5; frame++;
@@ -161,147 +163,173 @@
             ctx.restore();
         }
 
-        // --- VISUALS ---
+        // --- EFFEKTE (REALE LOGIK) ---
+
+        function drawNebula(w, h, cx, cy) {
+            const bass = smoothArray[2]/255;
+            const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, bass * h);
+            g.addColorStop(0, `hsla(${hue}, 100%, 50%, 0.3)`);
+            g.addColorStop(1, 'transparent');
+            ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
+        }
 
         function drawHyperdrive(w, h, cx, cy) {
-            const bass = smoothArray[2]/255;
-            for(let i=0; i<40; i++) {
-                const angle = i * 137.5;
-                const dist = (frame * 5 + i * 20) % (w);
-                const x = cx + Math.cos(angle) * dist;
-                const y = cy + Math.sin(angle) * dist;
-                ctx.fillStyle = `hsla(${hue + i*10}, 100%, 70%, ${1 - dist/w})`;
-                ctx.beginPath();
-                ctx.arc(x, y, 2 + bass * 10, 0, Math.PI*2);
-                ctx.fill();
+            for(let i=0; i<60; i++) {
+                const a = i * 137.5; const d = (frame * 8 + i * 30) % w;
+                ctx.fillStyle = `hsla(${hue + i}, 100%, 70%, ${1-d/w})`;
+                ctx.beginPath(); ctx.arc(cx+Math.cos(a)*d, cy+Math.sin(a)*d, 2 + smoothArray[i%20]/20, 0, 7); ctx.fill();
             }
         }
 
-        function drawKaleidoscope(w, h, cx, cy) {
-            ctx.translate(cx, cy);
-            const slices = 8;
-            for(let i=0; i<slices; i++) {
-                ctx.rotate((Math.PI * 2) / slices);
-                drawEq(w/2, h/2, 100, 0);
+        function drawEq(w, h, cx, cy) {
+            const bW = w/60;
+            for(let i=0; i<60; i++) {
+                const v = (smoothArray[i*2]/255)*h*0.8;
+                ctx.fillStyle = `hsla(${hue+i*4}, 100%, 50%, 0.8)`;
+                ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
+                ctx.fillRect(i*bW, h-v, bW-2, v);
             }
         }
 
-        function drawFire(w, h, cx, cy) {
-            for(let i=0; i<50; i++) {
-                const val = smoothArray[i*2];
-                const x = (w / 50) * i;
-                const y = h - (val/255) * h * 0.8;
-                const grad = ctx.createLinearGradient(x, h, x, y);
-                grad.addColorStop(0, '#ff0000');
-                grad.addColorStop(0.5, '#ffcc00');
-                grad.addColorStop(1, 'transparent');
-                ctx.fillStyle = grad;
-                ctx.fillRect(x, y, w/50, h-y);
+        function drawTunnel(w, h, cx, cy) {
+            for(let i=0; i<15; i++) {
+                const s = (frame*2 + i*100) % 1000;
+                const p = 1 - s/1000;
+                ctx.strokeStyle = `hsla(${hue+i*20}, 100%, 50%, ${p})`;
+                ctx.lineWidth = 10 * p;
+                ctx.strokeRect(cx-s/2, cy-s/2, s, s);
+            }
+        }
+
+        function drawNeural(w, h, cx, cy) {
+            const pts = [];
+            for(let i=0; i<15; i++) {
+                pts.push({x: Math.cos(frame*0.01 + i)*cx*0.8 + cx, y: Math.sin(frame*0.02 + i)*cy*0.8 + cy, v: smoothArray[i*5]});
+            }
+            pts.forEach((p, i) => {
+                ctx.fillStyle = `hsla(${hue}, 100%, 50%, 1)`;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.v/10, 0, 7); ctx.fill();
+                pts.forEach(p2 => {
+                    const d = Math.hypot(p.x-p2.x, p.y-p2.y);
+                    if(d < 300) {
+                        ctx.strokeStyle = `hsla(${hue}, 100%, 50%, ${1-d/300})`;
+                        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p2.x, p2.y); ctx.stroke();
+                    }
+                });
+            });
+        }
+
+        function drawHole(w, h, cx, cy) {
+            ctx.translate(cx, cy); ctx.rotate(-frame*0.01);
+            for(let i=0; i<80; i++) {
+                const a = i * 0.2; const r = (w - (frame*5 + i*10)%w);
+                ctx.fillStyle = `hsla(${hue+i}, 100%, 60%, ${1-r/w})`;
+                ctx.beginPath(); ctx.arc(Math.cos(a)*r, Math.sin(a)*r, smoothArray[i%30]/15, 0, 7); ctx.fill();
+            }
+        }
+
+        function drawScope(w,h,cx,cy) {
+            analyser.getByteTimeDomainData(dataArray);
+            ctx.beginPath(); ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 1)`; ctx.lineWidth=4;
+            for(let i=0; i<dataArray.length; i++) {
+                const x = (i/dataArray.length)*w; const y = cy + (dataArray[i]-128)*3;
+                if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+            }
+            ctx.stroke();
+        }
+
+        function drawRain(w,h,cx,cy) {
+            for(let i=0; i<30; i++) {
+                const x = (w/30)*i; const l = (smoothArray[i*3]/255)*h;
+                ctx.fillStyle = `hsla(${hue}, 100%, 50%, 0.4)`;
+                ctx.fillRect(x, 0, 2, l);
+                ctx.fillStyle = "#fff"; ctx.fillRect(x, l-10, 2, 10);
             }
         }
 
         function drawVortex(w, h, cx, cy) {
             ctx.translate(cx, cy);
-            ctx.rotate(frame * 0.01);
-            for(let i=0; i<100; i++) {
-                const r = i * 4 + smoothArray[i%50];
-                const a = i * 0.1;
-                ctx.fillStyle = `hsla(${hue + i}, 100%, 50%, 0.5)`;
-                ctx.fillRect(Math.cos(a)*r, Math.sin(a)*r, 4, 4);
+            for(let i=0; i<120; i++) {
+                ctx.rotate(0.1);
+                const r = smoothArray[i%50] * 2;
+                ctx.fillStyle = `hsla(${hue+i}, 100%, 50%, 0.6)`;
+                ctx.fillRect(r, r, 5, 5);
             }
-        }
-
-        function drawEq(w, h, cx, cy) {
-            const barW = w / 40;
-            for(let i=0; i<40; i++) {
-                const v = (smoothArray[i*2]/255) * h * 0.5;
-                ctx.fillStyle = `hsla(${hue + i*5}, 100%, 50%, 0.8)`;
-                ctx.shadowBlur = 15; ctx.shadowColor = ctx.fillStyle;
-                ctx.fillRect(i*barW, h-v, barW-2, v);
-                ctx.fillRect(i*barW, 0, barW-2, v); // Mirror top
-            }
-        }
-
-        function drawNebula(w, h, cx, cy) {
-            const bass = smoothArray[2]/255;
-            const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, bass * h * 0.8);
-            g.addColorStop(0, `hsla(${hue}, 100%, 50%, 0.4)`);
-            g.addColorStop(1, 'transparent');
-            ctx.fillStyle = g;
-            ctx.fillRect(0,0,w,h);
         }
 
         function drawHex(w, h, cx, cy) {
-            ctx.translate(cx, cy); ctx.rotate(frame * 0.005);
-            for(let j=0; j<3; j++) {
-                ctx.beginPath();
-                for(let i=0; i<7; i++) {
-                    const a = (i * Math.PI * 2) / 6;
-                    const r = 100 + j*50 + smoothArray[i*5];
-                    const x = Math.cos(a) * r;
-                    const y = Math.sin(a) * r;
-                    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-                }
-                ctx.strokeStyle = `hsla(${hue + j*40}, 100%, 50%, 1)`;
-                ctx.lineWidth = 5; ctx.stroke();
-            }
-        }
-
-        // --- UI HELPERS ---
-        function setMode(m) { mode = m; isFilmMode = false; updateUI(); triggerUI(); }
-        function toggleFilmMode() { isFilmMode = !isFilmMode; updateUI(); }
-        function updateUI() {
-            visuals.forEach((_, i) => document.getElementById(`btn-${i}`).classList.toggle('active', mode === i));
-            document.getElementById('auto-btn').classList.toggle('active', isFilmMode);
-        }
-        function triggerUI() {
-            document.body.classList.add('ui-active');
-            clearTimeout(uiTimeout);
-            uiTimeout = setTimeout(() => document.body.classList.remove('ui-active'), 2000);
-        }
-        window.addEventListener('mousemove', triggerUI);
-        window.addEventListener('touchstart', triggerUI);
-
-        // Fallback Zeichner für die vielen neuen Modi
-        function drawScope(w,h,cx,cy) {
-            ctx.beginPath(); ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 1)`; ctx.lineWidth=3;
-            for(let i=0; i<dataArray.length; i++) {
-                const x = (i/dataArray.length)*w; const y = cy + (dataArray[i]-128);
+            ctx.translate(cx, cy); ctx.rotate(frame*0.01);
+            ctx.lineWidth=5; ctx.strokeStyle=`hsla(${hue},100%,50%,1)`;
+            ctx.beginPath();
+            for(let i=0; i<7; i++) {
+                const a = i * Math.PI * 2 / 6;
+                const r = 150 + smoothArray[2]*2;
+                const x = Math.cos(a)*r, y = Math.sin(a)*r;
                 if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
             }
             ctx.stroke();
         }
-        function drawDNA(w,h,cx,cy) {
-            for(let i=0; i<20; i++) {
-                const y = (h/20)*i; const off = Math.sin(frame*0.05 + i)*smoothArray[i];
-                ctx.fillStyle=`hsla(${hue+i*10},100%,50%,1)`;
-                ctx.beginPath(); ctx.arc(cx+off, y, 8, 0, 7); ctx.fill();
-                ctx.beginPath(); ctx.arc(cx-off, y, 8, 0, 7); ctx.fill();
+
+        function drawWeb(w,h,cx,cy) {
+            ctx.translate(cx,cy);
+            for(let i=0; i<12; i++) {
+                ctx.rotate(Math.PI/6);
+                const l = smoothArray[i*4]*2;
+                ctx.strokeStyle = `hsla(${hue}, 100%, 50%, 0.8)`;
+                ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(l, l); ctx.stroke();
             }
         }
-        function drawGrid(w,h,cx,cy) {
-            ctx.strokeStyle=`hsla(${hue},100%,50%,0.3)`;
-            for(let i=0; i<w; i+=40) {
-                ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,h); ctx.stroke();
-            }
-            for(let i=0; i<h; i+=40) {
-                const offset = smoothArray[i%20]/5;
-                ctx.beginPath(); ctx.moveTo(0,i+offset); ctx.lineTo(w,i+offset); ctx.stroke();
-            }
-        }
-        // Weitere Platzhalter für die Liste oben (Logik ist ähnlich)
-        function drawTunnel(w,h,cx,cy) { drawHex(w,h,cx,cy); }
-        function drawRain(w,h,cx,cy) { drawFire(w,h,cx,cy); }
-        function drawPulse(w,h,cx,cy) { drawNebula(w,h,cx,cy); }
-        function drawHole(w,h,cx,cy) { drawVortex(w,h,cx,cy); }
+
+        // --- BACKUP / WEITERE MODI ---
+        function drawFire(w,h,cx,cy) { drawEq(w,h*2,cx,cy); }
+        function drawKaleid(w,h,cx,cy) { ctx.translate(cx,cy); for(let i=0; i<6; i++){ ctx.rotate(Math.PI/3); drawEq(w/4,h/4,0,0); } }
+        function drawGrid(w,h,cx,cy) { ctx.strokeStyle=`hsla(${hue},100%,50%,0.2)`; for(let i=0; i<w; i+=50){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,h);ctx.stroke();} }
+        function drawPulse(w,h,cx,cy) { const s = smoothArray[2]; ctx.fillStyle=`hsla(${hue},100%,50%,0.5)`; ctx.beginPath(); ctx.arc(cx,cy,s*2,0,7); ctx.fill(); }
         function drawParticles(w,h,cx,cy) { drawHyperdrive(w,h,cx,cy); }
-        function drawMatrix(w,h,cx,cy) { drawFire(w,h,cx,cy); }
-        function drawWeb(w,h,cx,cy) { drawHex(w,h,cx,cy); }
-        function drawSpikes(w,h,cx,cy) { drawVortex(w,h,cx,cy); }
-        function drawFloating(w,h,cx,cy) { drawHyperdrive(w,h,cx,cy); }
-        function drawMirror(w,h,cx,cy) { drawKaleidoscope(w,h,cx,cy); }
-        function drawWaves(w,h,cx,cy) { drawScope(w,h,cx,cy); }
-        function drawNeural(w,h,cx,cy) { drawDNA(w,h,cx,cy); }
+        function drawMatrix(w,h,cx,cy) { drawRain(w,h,cx,cy); }
+        function drawSpikes(w,h,cx,cy) { drawWeb(w,h,cx,cy); }
+        function drawOrbit(w,h,cx,cy) { drawVortex(w,h,cx,cy); }
+        function drawMirror(w,h,cx,cy) { drawEq(w,h,cx,cy); }
+        function drawStorm(w,h,cx,cy) { drawNebula(w,h,cx,cy); }
+        function drawDNA(w,h,cx,cy) { drawNeural(w,h,cx,cy); }
+
+        // --- UI & FULLSCREEN LOGIK ---
+        function setMode(m) { mode = m; isFilmMode = false; updateUI(); triggerUI(); }
+        function toggleFilmMode() { isFilmMode = !isFilmMode; updateUI(); }
+        
+        function toggleFS() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(e => {
+                    alert("Vollbild nicht möglich. Bitte Browser-Einstellungen prüfen.");
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function updateUI() {
+            visuals.forEach((_, i) => document.getElementById(`btn-${i}`).classList.toggle('active', mode === i));
+            document.getElementById('auto-btn').classList.toggle('active', isFilmMode);
+        }
+
+        function triggerUI() {
+            document.body.classList.add('ui-active');
+            clearTimeout(uiTimeout);
+            uiTimeout = setTimeout(() => document.body.classList.remove('ui-active'), 3000);
+        }
+
+        // Double-Tap Erkennung
+        let lastTap = 0;
+        window.addEventListener('touchstart', (e) => {
+            const now = Date.now();
+            if (now - lastTap < 300) toggleFS();
+            lastTap = now;
+            triggerUI();
+        });
+
+        window.addEventListener('mousemove', triggerUI);
+        window.addEventListener('click', triggerUI);
+        window.addEventListener('keydown', (e) => { if(e.key === 'f') toggleFS(); });
 
     </script>
 </body>
