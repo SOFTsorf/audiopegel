@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elegant Audio Visualizer</title>
+    <style>
+        :root {
+            --accent-color: #00f2ff;
+            --bg-color: #0a0a0a;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI Controls */
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 25px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: opacity 0.5s ease;
+            z-index: 10;
+        }
+
+        /* Ausblenden im Vollbildmodus */
+        body.fullscreen-active .controls {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        button {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: var(--accent-color);
+            color: black;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-color);
+        }
+
+        button.active {
+            background: white;
+            color: black;
+        }
+
+        #start-overlay {
+            position: fixed;
+            z-index: 20;
+            text-align: center;
+            cursor: pointer;
+        }
+        
+        #start-overlay h1 {
+            font-weight: 200;
+            letter-spacing: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="start-overlay">
+        <h1>KLICKEN ZUM STARTEN</h1>
+        <p>Mikrofon wird benötigt</p>
+    </div>
+
+    <canvas id="visualizer"></canvas>
+
+    <div class="controls" id="ui-controls">
+        <button onclick="setMode('bars')" id="btn-bars">Balken</button>
+        <button onclick="setMode('wave')" id="btn-wave">Welle</button>
+        <button onclick="setMode('circle')" id="btn-circle">Kreis</button>
+        <button onclick="toggleFullscreen()">Vollbild [F]</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('visualizer');
+        const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('start-overlay');
+        const controls = document.getElementById('ui-controls');
+
+        let audioCtx, analyser, source, dataArray;
+        let animationId;
+        let currentMode = 'bars';
+
+        // Canvas Größe anpassen
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Audio Setup
+        async function initAudio() {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioCtx.createAnalyser();
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                source = audioCtx.createMediaStreamSource(stream);
+                source.connect(analyser);
+                
+                // Feinabstimmung für smoothe Daten
+                analyser.fftSize = 512; 
+                analyser.smoothingTimeConstant = 0.8; // Macht die Bewegung "eleganter"
+                
+                const bufferLength = analyser.frequencyBinCount;
+                dataArray = new Uint8Array(bufferLength);
+                
+                overlay.style.display = 'none';
+                draw();
+            } catch (err) {
+                alert("Mikrofon-Zugriff verweigert oder nicht verfügbar.");
+            }
+        }
+
+        overlay.addEventListener('click', initAudio);
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('btn-' + mode).classList.add('active');
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                document.body.classList.add('fullscreen-active');
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    document.body.classList.remove('fullscreen-active');
+                }
+            }
+        }
+
+        // Überwachung des Vollbild-Status (falls mit ESC beendet wird)
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                document.body.classList.remove('fullscreen-active');
+            }
+        });
+
+        function draw() {
+            animationId = requestAnimationFrame(draw);
+            analyser.getByteFrequencyData(dataArray);
+
+            // Hintergrund leicht transparent übermalen für "Motion Blur" Effekt
+            ctx.fillStyle = 'rgba(10, 10, 10, 0.2)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (currentMode === 'bars') drawBars();
+            if (currentMode === 'wave') drawWave();
+            if (currentMode === 'circle') drawCircle();
+        }
+
+        function drawBars() {
+            const barWidth = (canvas.width / dataArray.length) * 2.5;
+            let x = 0;
+
+            for (let i = 0; i < dataArray.length; i++) {
+                const barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
+                
+                // Farbverlauf
+                const hue = (i / dataArray.length) * 360;
+                ctx.fillStyle = `hsla(${hue}, 80%, 60%, 0.8)`;
+                
+                // Abgerundete Balken zeichnen
+                ctx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+                x += barWidth;
+            }
+        }
+
+        function drawWave() {
+            analyser.getByteTimeDomainData(dataArray);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#00f2ff';
+            ctx.beginPath();
+
+            const sliceWidth = canvas.width / dataArray.length;
+            let x = 0;
+
+            for (let i = 0; i < dataArray.length; i++) {
+                const v = dataArray[i] / 128.0;
+                const y = v * canvas.height / 2;
+
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+                x += sliceWidth;
+            }
+            ctx.stroke();
+        }
+
+        function drawCircle() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 150;
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.stroke();
+
+            for (let i = 0; i < dataArray.length; i++) {
+                const angle = (i / dataArray.length) * Math.PI * 2;
+                const amplitude = (dataArray[i] / 255) * 100;
+                const x1 = centerX + Math.cos(angle) * radius;
+                const y1 = centerY + Math.sin(angle) * radius;
+                const x2 = centerX + Math.cos(angle) * (radius + amplitude);
+                const y2 = centerY + Math.sin(angle) * (radius + amplitude);
+
+                ctx.strokeStyle = `hsla(${(i/dataArray.length)*360}, 100%, 50%, 0.8)`;
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+        }
+
+        // Shortcut für Vollbild
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+        });
+
+        setMode('bars');
+    </script>
+</body>
+</html>
