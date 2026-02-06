@@ -3,71 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Ultimate Audio Visualizer Mobile-Ready</title>
+    <title>Ultimate Audio Visualizer v3</title>
     <style>
-        :root { --accent: #00f2ff; }
+        :root { --accent: #00f2ff; --bg: #000; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
-            background: #000; overflow: hidden; font-family: sans-serif;
-            touch-action: none; /* Verhindert Zoom-Gesten beim Tappen */
+            background: var(--bg); overflow: hidden; font-family: 'Segoe UI', sans-serif;
+            touch-action: none; 
         }
         
         canvas { position: absolute; top: 0; left: 0; display: block; width: 100%; height: 100%; }
 
-        /* UI Styling - Optimiert für Daumen-Bedienung */
+        /* UI Styling */
         .ui-layer {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; 
-            z-index: 10; background: rgba(0, 0, 0, 0.7); padding: 10px; 
-            border-radius: 20px; backdrop-filter: blur(15px);
-            width: 90%; max-width: 500px;
-            transition: all 0.4s ease;
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; 
+            z-index: 10; background: rgba(0, 0, 0, 0.75); padding: 12px; 
+            border-radius: 24px; backdrop-filter: blur(20px);
+            width: 95%; max-width: 600px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid rgba(255,255,255,0.1);
         }
 
-        /* Verstecken im Vollbild */
-        body.is-fullscreen .ui-layer { opacity: 0; pointer-events: none; transform: translate(-50%, 50px); }
+        body.is-fullscreen .ui-layer { opacity: 0; pointer-events: none; transform: translate(-50%, 60px); }
+        /* Zeige UI im Fullscreen bei Mausbewegung */
+        body.is-fullscreen.show-ui .ui-layer { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
 
         button {
-            background: rgba(255,255,255,0.1); border: none; color: white;
-            padding: 10px 15px; border-radius: 12px; cursor: pointer; 
-            font-size: 12px; flex-grow: 1; min-width: 80px;
+            background: rgba(255,255,255,0.08); border: none; color: #fff;
+            padding: 8px 12px; border-radius: 10px; cursor: pointer; 
+            font-size: 11px; flex: 1 1 70px; transition: 0.2s;
+            text-transform: uppercase; letter-spacing: 1px;
         }
-        button.active { background: var(--accent); color: #000; font-weight: bold; }
+        button.active { background: var(--accent); color: #000; font-weight: bold; box-shadow: 0 0 15px var(--accent); }
+        button.fs-btn { background: rgba(0, 242, 255, 0.2); border: 1px solid var(--accent); }
 
         #start-screen {
             position: fixed; inset: 0; background: #000; z-index: 100;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            color: white; text-align: center; padding: 20px;
+            color: white; text-align: center; cursor: pointer;
         }
 
         .hint { 
             position: fixed; top: 15px; width: 100%; text-align: center; 
-            color: rgba(255,255,255,0.4); font-size: 11px; z-index: 5;
-            pointer-events: none; 
+            color: rgba(255,255,255,0.3); font-size: 10px; z-index: 5;
+            pointer-events: none; text-transform: uppercase; letter-spacing: 2px;
         }
     </style>
 </head>
 <body>
 
     <div id="start-screen" onclick="setupAudio()">
-        <h1 style="letter-spacing: 5px; font-weight: 300;">AUDIO VIZ</h1>
-        <p style="color: var(--accent)">TAP TO START</p>
-        <p style="font-size: 12px; opacity: 0.6;">(Mikrofon-Berechtigung erforderlich)</p>
+        <h1 style="letter-spacing: 15px; font-weight: 200; margin-bottom: 10px;">V I Z U A L</h1>
+        <p style="color: var(--accent); font-size: 14px;">BERÜHREN ZUM STARTEN</p>
     </div>
 
-    <div class="hint">TAP DISPLAY: WECHSEL | 'F': VOLLBILD</div>
+    <div class="hint">Display tippen: Modus wechseln | 'F': Fullscreen</div>
 
     <canvas id="canvas"></canvas>
 
     <div class="ui-layer" id="controls">
-        <button onclick="changeMode(0, event)" id="m0">Bars</button>
-        <button onclick="changeMode(1, event)" id="m1">Wave</button>
-        <button onclick="changeMode(2, event)" id="m2">Circle</button>
-        <button onclick="changeMode(3, event)" id="m3">Nebula</button>
-        <button onclick="toggleFS(event)" style="background: rgba(255,255,255,0.2)">Fullscreen</button>
+        <button onclick="setMode(0, event)" id="m0">Bars</button>
+        <button onclick="setMode(1, event)" id="m1">Wave</button>
+        <button onclick="setMode(2, event)" id="m2">Radial</button>
+        <button onclick="setMode(3, event)" id="m3">Nebula</button>
+        <button onclick="setMode(4, event)" id="m4">Spiral</button>
+        <button onclick="setMode(5, event)" id="m5">Mirror</button>
+        <button onclick="setMode(6, event)" id="m6">Flower</button>
+        <button onclick="setMode(7, event)" id="m7">Matrix</button>
+        <button onclick="toggleFS(event)" class="fs-btn">⛶</button>
     </div>
 
     <script>
@@ -76,8 +82,8 @@
         let audioCtx, analyser, dataArray, source;
         let mode = 0;
         let hue = 200;
+        let uiTimeout;
 
-        // Anpassung an Pixel-Dichte für scharfe Darstellung auf Handys
         function resize() {
             const dpr = window.devicePixelRatio || 1;
             canvas.width = window.innerWidth * dpr;
@@ -94,62 +100,60 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 source = audioCtx.createMediaStreamSource(stream);
                 analyser = audioCtx.createAnalyser();
-                
-                // Auf Handys weniger Datenpunkte für bessere Performance
-                analyser.fftSize = window.innerWidth < 600 ? 256 : 512;
-                analyser.smoothingTimeConstant = 0.8;
-                
+                analyser.fftSize = window.innerWidth < 600 ? 512 : 1024;
+                analyser.smoothingTimeConstant = 0.85;
                 dataArray = new Uint8Array(analyser.frequencyBinCount);
                 source.connect(analyser);
-                
                 document.getElementById('start-screen').style.display = 'none';
                 updateUI();
                 draw();
             } catch (err) {
-                alert("Mikrofon-Zugriff fehlgeschlagen. Bitte in den Einstellungen erlauben.");
+                alert("Mikrofon Zugriff verweigert.");
             }
         }
 
-        // Modus-Wechsel durch Tappen auf den Hintergrund
-        window.addEventListener('touchstart', handleInteraction);
-        window.addEventListener('mousedown', handleInteraction);
-
-        function handleInteraction(e) {
+        // DER FIX FÜR DAS DOPPEL-TAPPING:
+        // Wir nutzen nur pointerdown (deckt Touch und Maus ab)
+        window.addEventListener('pointerdown', (e) => {
             if(e.target.tagName !== 'BUTTON' && audioCtx) {
-                mode = (mode + 1) % 4;
+                mode = (mode + 1) % 8;
                 updateUI();
             }
-        }
+            showUIInFullscreen();
+        });
 
-        function changeMode(newMode, e) {
-            e.stopPropagation(); // Verhindert doppelten Wechsel
-            mode = newMode;
+        function setMode(m, e) {
+            if(e) e.stopPropagation();
+            mode = m;
             updateUI();
         }
 
         function updateUI() {
             document.querySelectorAll('button').forEach((b, i) => {
-                if(i < 4) b.classList.toggle('active', i === mode);
+                if(i < 8) b.classList.toggle('active', i === mode);
             });
         }
 
         function toggleFS(e) {
             if(e) e.stopPropagation();
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {});
+                document.documentElement.requestFullscreen();
                 document.body.classList.add('is-fullscreen');
             } else {
                 document.exitFullscreen();
-                document.body.classList.remove('is-fullscreen');
             }
         }
 
-        // Automatische Erkennung wenn Fullscreen per ESC verlassen wird
         document.addEventListener('fullscreenchange', () => {
             if (!document.fullscreenElement) document.body.classList.remove('is-fullscreen');
         });
 
-        window.addEventListener('keydown', e => { if(e.key.toLowerCase() === 'f') toggleFS(); });
+        function showUIInFullscreen() {
+            document.body.classList.add('show-ui');
+            clearTimeout(uiTimeout);
+            uiTimeout = setTimeout(() => document.body.classList.remove('show-ui'), 3000);
+        }
+        window.addEventListener('mousemove', showUIInFullscreen);
 
         function draw() {
             requestAnimationFrame(draw);
@@ -157,29 +161,29 @@
 
             const w = window.innerWidth;
             const h = window.innerHeight;
-
-            // Hintergrund sauber löschen mit leichtem Fade-Effekt
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-            ctx.fillRect(0, 0, w, h);
-
-            hue += 0.5;
             const centerX = w / 2;
             const centerY = h / 2;
 
-            if (mode === 0) { // Responsive Bars
-                const count = dataArray.length * 0.7;
-                const barWidth = w / count;
+            // Hintergrund-Clearing (vermeidet Rückstände)
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.18)';
+            ctx.fillRect(0, 0, w, h);
+
+            hue += 0.4;
+
+            if (mode === 0) { // Bars
+                const count = dataArray.length * 0.6;
+                const bw = w / count;
                 for (let i = 0; i < count; i++) {
-                    const barH = (dataArray[i] / 255) * h * 0.7;
-                    ctx.fillStyle = `hsla(${hue + (i * 2)}, 70%, 50%, 0.8)`;
-                    ctx.fillRect(i * barWidth, h - barH, barWidth - 1, barH);
+                    const val = (dataArray[i] / 255) * h * 0.8;
+                    ctx.fillStyle = `hsla(${hue + i}, 70%, 50%, 0.8)`;
+                    ctx.fillRect(i * bw, h - val, bw - 1, val);
                 }
             } 
-            else if (mode === 1) { // Floating Wave
+            else if (mode === 1) { // Oscilloscope Wave
                 analyser.getByteTimeDomainData(dataArray);
-                ctx.beginPath();
                 ctx.lineWidth = 3;
-                ctx.strokeStyle = `hsla(${hue}, 80%, 60%, 1)`;
+                ctx.strokeStyle = `hsla(${hue}, 90%, 60%, 1)`;
+                ctx.beginPath();
                 let slice = w / dataArray.length;
                 for(let i=0; i < dataArray.length; i++) {
                     let y = (dataArray[i] / 128.0) * centerY;
@@ -187,31 +191,71 @@
                 }
                 ctx.stroke();
             }
-            else if (mode === 2) { // Circle
-                const count = dataArray.length * 0.6;
+            else if (mode === 2) { // Radial Ring
+                const count = dataArray.length * 0.5;
                 for (let i = 0; i < count; i++) {
                     const angle = (i / count) * Math.PI * 2;
-                    const len = (dataArray[i] / 255) * (w < 600 ? 80 : 150);
-                    const r = w < 600 ? 60 : 100;
-                    ctx.strokeStyle = `hsla(${hue + i}, 80%, 50%, 0.8)`;
-                    ctx.lineWidth = w < 600 ? 3 : 5;
-                    ctx.lineCap = "round";
+                    const len = (dataArray[i] / 255) * (w < 600 ? 100 : 200);
+                    const r = w < 600 ? 70 : 120;
+                    ctx.strokeStyle = `hsla(${hue + i}, 80%, 55%, 0.8)`;
+                    ctx.lineWidth = 4;
                     ctx.beginPath();
                     ctx.moveTo(centerX + Math.cos(angle) * r, centerY + Math.sin(angle) * r);
                     ctx.lineTo(centerX + Math.cos(angle) * (r + len), centerY + Math.sin(angle) * (r + len));
                     ctx.stroke();
                 }
             }
-            else if (mode === 3) { // Nebula (Pulse)
+            else if (mode === 3) { // Nebula
                 const bass = dataArray[2] / 255;
-                const radius = bass * (w < 600 ? 200 : 400);
-                const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
-                grad.addColorStop(0, `hsla(${hue}, 80%, 50%, 0.6)`);
+                const grad = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, bass * h * 0.6);
+                grad.addColorStop(0, `hsla(${hue}, 80%, 50%, 0.7)`);
                 grad.addColorStop(1, 'transparent');
                 ctx.fillStyle = grad;
                 ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, 0, Math.PI*2);
+                ctx.arc(centerX, centerY, bass * h * 0.6, 0, Math.PI*2);
                 ctx.fill();
+            }
+            else if (mode === 4) { // Fibonacci Spiral
+                for (let i = 0; i < 100; i++) {
+                    const val = dataArray[i % 50];
+                    const angle = i * 0.2 + (hue * 0.01);
+                    const r = (i * 5) + (val * 0.2);
+                    ctx.fillStyle = `hsla(${hue + i * 5}, 70%, 60%, 0.8)`;
+                    ctx.beginPath();
+                    ctx.arc(centerX + Math.cos(angle) * r, centerY + Math.sin(angle) * r, val/20 + 2, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+            else if (mode === 5) { // Mirror Peak
+                const count = dataArray.length * 0.4;
+                const bw = (w / 2) / count;
+                for (let i = 0; i < count; i++) {
+                    const bh = (dataArray[i] / 255) * centerY;
+                    ctx.fillStyle = `hsla(${hue + i*3}, 70%, 50%, 0.8)`;
+                    ctx.fillRect(centerX + i * bw, centerY - bh/2, bw - 1, bh);
+                    ctx.fillRect(centerX - i * bw, centerY - bh/2, bw - 1, bh);
+                }
+            }
+            else if (mode === 6) { // Flower / Geometric
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(hue * 0.01);
+                for(let i=0; i<6; i++) {
+                    ctx.rotate(Math.PI / 3);
+                    const val = dataArray[i*10] / 2;
+                    ctx.strokeStyle = `hsla(${hue + i*40}, 80%, 60%, 0.8)`;
+                    ctx.strokeRect(-val/2, -val/2, val, val);
+                }
+                ctx.restore();
+            }
+            else if (mode === 7) { // Matrix Rain (Freq based)
+                for (let i = 0; i < 30; i++) {
+                    const val = dataArray[i * 5];
+                    const x = (w / 30) * i;
+                    ctx.fillStyle = `hsla(120, 100%, 50%, ${val/255})`;
+                    ctx.font = "15px monospace";
+                    ctx.fillText(Math.random() > 0.5 ? "1" : "0", x, (val/255) * h);
+                }
             }
         }
     </script>
